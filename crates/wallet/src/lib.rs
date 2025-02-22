@@ -1,24 +1,18 @@
 mod db;
+mod db;
 use anyhow::Result;
-use node::{MintResponse, NodeClient};
 use node::{
-    MeltRequest, 
-    MeltResponse, 
-    MintQuoteRequest, 
-    MintQuoteResponse,
-    MintQuoteState,
-    MintRequest,
-    SwapRequest, 
+    MeltRequest, MeltResponse, MintQuoteRequest, MintQuoteResponse, MintRequest, SwapRequest,
     SwapResponse,
-    QuoteStateRequest
 };
+use node::{MintResponse, NodeClient};
 use nuts::nut00::{BlindedMessage, Proof};
-use tonic::transport::Channel;
 use rusqlite::Connection;
+use tonic::transport::Channel;
 
 pub use db::create_tables;
 
-pub fn convert_inputs(inputs: &[Proof]) -> Vec<node::Proof>{
+pub fn convert_inputs(inputs: &[Proof]) -> Vec<node::Proof> {
     inputs
         .iter()
         .map(|p| node::Proof {
@@ -28,7 +22,7 @@ pub fn convert_inputs(inputs: &[Proof]) -> Vec<node::Proof>{
             unblind_signature: p.c.to_bytes().to_vec(),
         })
         .collect()
-} 
+}
 
 pub fn convert_outputs(outputs: &[BlindedMessage]) -> Vec<node::BlindedMessage> {
     outputs
@@ -41,10 +35,9 @@ pub fn convert_outputs(outputs: &[BlindedMessage]) -> Vec<node::BlindedMessage> 
         .collect()
 }
 
-
-
 pub async fn create_mint_quote(
     db_conn: &mut Connection,
+    node_client: &mut NodeClient<Channel>,
     node_client: &mut NodeClient<Channel>,
     method: String,
     amount: u64,
@@ -69,19 +62,17 @@ pub async fn mint(
     node_client: &mut NodeClient<Channel>,
     method: String,
     quote: String,
-    outputs: &[BlindedMessage]
+    outputs: &[BlindedMessage],
 ) -> Result<MintResponse> {
-    
     let req = MintRequest {
         method,
         quote,
-        outputs: convert_outputs(outputs)
+        outputs: convert_outputs(outputs),
     };
 
     let resp = node_client.mint(req).await?;
 
     Ok(resp.into_inner())
-
 }
 
 pub async fn create_melt(
@@ -116,4 +107,3 @@ pub async fn swap(
 
     Ok(resp.into_inner())
 }
-
